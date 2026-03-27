@@ -1545,10 +1545,13 @@ async function loadAll(){
       sbGet('rdvs','order=created_at.desc'),
       sbGet('registrations','order=created_at.asc')
     ]);
-  } catch(e){ console.error('Supabase load error:', e); }
-  renderAll();
-  updateStats();
-  renderActivity();
+    renderAll();
+    updateStats();
+    renderActivity();
+  } catch(e){
+    console.error('Supabase load error:', e);
+    toast('Erreur connexion base de données','error');
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -1752,18 +1755,32 @@ async function addEvent(){
   const game=document.getElementById('ev-game').value.trim();
   const desc=document.getElementById('ev-desc').value.trim();
   if(!title||!date){ toast('Titre et date obligatoires','error'); return; }
-  const result = await sbInsert('events',{title,date,time,type,game,description:desc});
-  if(!result){ toast('Erreur lors de la publication','error'); return; }
-  events = await sbGet('events','order=date.asc');
-  closeModal('addEventModal');
-  revokeAdmin();
-  document.getElementById('ev-title').value='';
-  document.getElementById('ev-game').value='';
-  document.getElementById('ev-desc').value='';
-  addActivity(`Nouvel event publié : <strong>${title}</strong>`,typeColor(type));
-  toast(`Event "${title}" publié ! 🔥`);
-  renderAll();
-  if(document.getElementById('sec-streams').classList.contains('active')) renderCalendar();
+  // Bouton loading
+  const btn=document.querySelector('#addEventModal .btn.primary');
+  const oldTxt=btn.textContent; btn.textContent='PUBLICATION...'; btn.disabled=true;
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/events`, {
+      method:'POST',
+      headers:{...sbHeaders,'Prefer':'return=representation'},
+      body: JSON.stringify({title,date,time,type,game,description:desc})
+    });
+    const body = await r.json();
+    if(!r.ok){ toast(`Erreur Supabase : ${body.message||r.status}`,'error'); btn.textContent=oldTxt; btn.disabled=false; return; }
+    events = await sbGet('events','order=date.asc');
+    closeModal('addEventModal');
+    revokeAdmin();
+    document.getElementById('ev-title').value='';
+    document.getElementById('ev-game').value='';
+    document.getElementById('ev-desc').value='';
+    addActivity(`Nouvel event publié : <strong>${title}</strong>`,typeColor(type));
+    toast(`Event "${title}" publié ! 🔥`);
+    renderAll();
+    if(document.getElementById('sec-streams').classList.contains('active')) renderCalendar();
+  } catch(e){
+    toast(`Erreur réseau : ${e.message}`,'error');
+    console.error(e);
+  }
+  btn.textContent=oldTxt; btn.disabled=false;
 }
 
 function filterEvents(f){
