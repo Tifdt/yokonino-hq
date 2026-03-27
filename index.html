@@ -1491,37 +1491,62 @@ body {
 // ═══════════════════════════════════════════════
 // SUPABASE CONFIG
 // ═══════════════════════════════════════════════
-const SB_URL = 'https://qipnlrgvtghtgpowkgp.supabase.co';
+const SB_URL = 'https://qipnlrgvtghtgpowokgp.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpcG5scmd2dGdodGdwb3dva2dwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NDQzMzMsImV4cCI6MjA5MDIyMDMzM30.J0aHAPiB3jQoMYK6lRc_bR0VFiPvDndARIjgVzYotWU';
 
 const sbHeaders = {
   'Content-Type': 'application/json',
   'apikey': SB_KEY,
-  'Authorization': `Bearer ${SB_KEY}`
+  'Authorization': `Bearer ${SB_KEY}`,
+  'X-Client-Info': 'supabase-js/2.0.0'
 };
 
 async function sbGet(table, params=''){
-  const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, { headers: sbHeaders });
-  return r.ok ? await r.json() : [];
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, {
+      method: 'GET',
+      headers: sbHeaders,
+      mode: 'cors',
+      credentials: 'omit'
+    });
+    return r.ok ? await r.json() : [];
+  } catch(e){ console.error('sbGet error:', e); return []; }
 }
 async function sbInsert(table, data){
-  const r = await fetch(`${SB_URL}/rest/v1/${table}`, {
-    method:'POST', headers:{...sbHeaders,'Prefer':'return=representation'},
-    body: JSON.stringify(data)
-  });
-  return r.ok ? await r.json() : null;
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: {...sbHeaders, 'Prefer': 'return=representation'},
+      mode: 'cors',
+      credentials: 'omit',
+      body: JSON.stringify(data)
+    });
+    const json = await r.json();
+    if(!r.ok){ console.error('sbInsert error:', json); return null; }
+    return json;
+  } catch(e){ console.error('sbInsert error:', e); return null; }
 }
 async function sbDelete(table, id){
-  const r = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
-    method:'DELETE', headers: sbHeaders
-  });
-  return r.ok;
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: sbHeaders,
+      mode: 'cors',
+      credentials: 'omit'
+    });
+    return r.ok;
+  } catch(e){ return false; }
 }
 async function sbDeleteWhere(table, col, val){
-  const r = await fetch(`${SB_URL}/rest/v1/${table}?${col}=eq.${encodeURIComponent(val)}`, {
-    method:'DELETE', headers: sbHeaders
-  });
-  return r.ok;
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/${table}?${col}=eq.${encodeURIComponent(val)}`, {
+      method: 'DELETE',
+      headers: sbHeaders,
+      mode: 'cors',
+      credentials: 'omit'
+    });
+    return r.ok;
+  } catch(e){ return false; }
 }
 
 // ═══════════════════════════════════════════════
