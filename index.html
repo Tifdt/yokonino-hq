@@ -781,19 +781,165 @@ body {
 .admin-toggle-dot { width:6px; height:6px; border-radius:50%; background:var(--gold); box-shadow:0 0 6px var(--gold); }
 
 /* ═══════════════════════════════════════════════
-   RESPONSIVE
+   RESPONSIVE TABLETTE
 ═══════════════════════════════════════════════ */
 @media (max-width:900px) {
   .stats-grid { grid-template-columns:repeat(2,1fr); }
   .home-grid, .calendar-wrap, .rdv-layout, .community-grid { grid-template-columns:1fr; }
 }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE MOBILE — BOTTOM NAVBAR
+═══════════════════════════════════════════════ */
 @media (max-width:600px) {
-  :root { --sidebar:56px; }
-  .section { padding:20px; }
-  .stats-grid { grid-template-columns:1fr 1fr; }
-  .topbar { padding:0 16px; }
-  .hero-banner { flex-direction:column; gap:20px; padding:24px; }
-  .form-row { grid-template-columns:1fr; }
+
+  /* Cache la sidebar gauche, désactive le cursor custom */
+  .sidebar { display: none; }
+  body { cursor: auto; }
+  #cur, #cur-r { display: none; }
+
+  /* Main prend toute la largeur + padding bas pour la navbar */
+  .main { margin-left: 0; padding-bottom: 70px; }
+
+  /* Topbar mobile */
+  .topbar {
+    padding: 0 16px;
+    height: 52px;
+  }
+  .topbar-title { font-size: 20px; letter-spacing: 2px; }
+  .topbar-breadcrumb { display: none; }
+  .live-pill { padding: 4px 10px; font-size: 9px; letter-spacing: 2px; }
+  .topbar-time { display: none; }
+
+  /* Sections */
+  .section { padding: 16px 14px; }
+
+  /* Hero banner */
+  .hero-banner { flex-direction: column; gap: 16px; padding: 20px 16px; }
+  .hero-name { font-size: 38px; letter-spacing: 3px; }
+  .hero-tagline { font-size: 10px; }
+  .hero-tags { gap: 6px; }
+  .tag { font-size: 8px; padding: 3px 8px; }
+
+  /* Stats grid — 2 colonnes sur mobile */
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 14px; }
+  .stat-val { font-size: 32px; }
+  .stat-label { font-size: 8px; }
+
+  /* Grilles en colonne unique */
+  .home-grid,
+  .calendar-wrap,
+  .rdv-layout,
+  .community-grid { grid-template-columns: 1fr; gap: 14px; }
+
+  /* Events grid — 1 colonne */
+  .events-grid { grid-template-columns: 1fr; }
+  .events-controls { flex-wrap: wrap; gap: 8px; }
+  .events-controls .btn { font-size: 9px; padding: 8px 12px; letter-spacing: 2px; }
+  .sec-header { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .sec-title { font-size: 34px; }
+
+  /* Calendrier mobile */
+  .cal-day { min-height: 44px; padding: 4px; }
+  .cal-num { font-size: 10px; }
+  .cal-event-dot { display: none; } /* trop petit, juste le dot suffit */
+  .cal-header { font-size: 8px; padding: 6px 0; }
+
+  /* Forms */
+  .form-row { grid-template-columns: 1fr; }
+  .form-input, .form-select, .form-textarea { font-size: 16px; } /* évite le zoom auto iOS */
+  .time-slots { grid-template-columns: repeat(3,1fr); gap: 6px; }
+  .time-slot { padding: 8px 4px; font-size: 9px; }
+
+  /* Panels */
+  .panel { padding: 16px; }
+  .panel-title { font-size: 9px; }
+
+  /* Leaderboard */
+  .leaderboard-item { padding: 10px 12px; gap: 10px; }
+  .lb-rank { font-size: 22px; min-width: 30px; }
+  .lb-pts { font-size: 18px; }
+
+  /* Modal plein écran sur mobile */
+  .modal {
+    width: 100%;
+    max-height: 92vh;
+    padding: 24px 18px;
+    border-radius: 0;
+    position: fixed;
+    bottom: 0; left: 0;
+    border-left: none; border-right: none; border-bottom: none;
+    animation: modalSlideUp .35s cubic-bezier(.22,1,.36,1);
+  }
+  .modal-overlay { align-items: flex-end; }
+  .modal-title { font-size: 28px; }
+  @keyframes modalSlideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  /* Toast bas de page ajusté */
+  .toast-wrap { bottom: 80px; right: 12px; left: 12px; }
+  .toast { min-width: unset; width: 100%; }
+}
+
+/* ═══════════════════════════════════════════════
+   BOTTOM NAVBAR MOBILE
+═══════════════════════════════════════════════ */
+.mobile-nav {
+  display: none;
+}
+
+@media (max-width:600px) {
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 62px;
+    background: rgba(4,4,10,.97);
+    border-top: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    z-index: 100;
+    align-items: stretch;
+  }
+
+  .mob-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color .2s;
+    position: relative;
+    padding: 0;
+  }
+
+  .mob-nav-btn.active {
+    color: var(--red2);
+  }
+
+  .mob-nav-btn.active::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 24px; height: 2px;
+    background: var(--red2);
+    box-shadow: 0 0 8px var(--red2);
+  }
+
+  .mob-nav-btn svg {
+    width: 20px; height: 20px;
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -1395,9 +1541,13 @@ const sections={home:'HOME / DASHBOARD',events:'EVENTS / STREAMS',streams:'PLANN
 function nav(id){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.mob-nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('sec-'+id).classList.add('active');
   document.getElementById('nav-'+id).classList.add('active');
+  const mobBtn = document.getElementById('mob-nav-'+id);
+  if(mobBtn) mobBtn.classList.add('active');
   document.getElementById('breadcrumb').textContent=sections[id]||'';
+  window.scrollTo(0,0);
   if(id==='streams')renderCalendar();
   if(id==='community')renderCommunity();
 }
@@ -1825,5 +1975,31 @@ renderAll();
 filterEvents('all');
 renderCalendar();
 </script>
+<!-- ══════════════════════════════
+     MOBILE BOTTOM NAVBAR
+══════════════════════════════ -->
+<nav class="mobile-nav">
+  <button class="mob-nav-btn active" onclick="nav('home')" id="mob-nav-home">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5z"/></svg>
+    Home
+  </button>
+  <button class="mob-nav-btn" onclick="nav('events')" id="mob-nav-events">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+    Events
+  </button>
+  <button class="mob-nav-btn" onclick="nav('streams')" id="mob-nav-streams">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg>
+    Planning
+  </button>
+  <button class="mob-nav-btn" onclick="nav('rdv')" id="mob-nav-rdv">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    Collabs
+  </button>
+  <button class="mob-nav-btn" onclick="nav('community')" id="mob-nav-community">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+    Communauté
+  </button>
+</nav>
+
 </body>
 </html>
