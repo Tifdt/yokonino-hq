@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>YokoNino — HQ</title>
+<title>YokoNino</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
@@ -1490,47 +1490,280 @@ function updateClock(){
 setInterval(updateClock,1000); updateClock();
 
 // ═══════════════════════════════════════════════
-// BACKGROUND CANVAS
+// BACKGROUND CANVAS — RUE DE TOKYO LA NUIT / SAKURA
 // ═══════════════════════════════════════════════
 (function(){
-  const c=document.getElementById('bg'),ctx=c.getContext('2d');
-  let W,H,pts=[];
-  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight;}
-  resize(); window.addEventListener('resize',resize);
-  class P{ constructor(){ this.reset(); }
-    reset(){ this.x=Math.random()*W; this.y=Math.random()*H;
-      this.vx=(Math.random()-.5)*.25; this.vy=(Math.random()-.5)*.25;
-      this.r=Math.random()*1.2+.2; this.a=Math.random()*.35+.05;
-      this.t=Math.random()<.12?'r':'w'; this.life=0; this.ml=180+Math.random()*280; }
-    update(){ this.x+=this.vx; this.y+=this.vy; this.life++;
-      if(this.life>this.ml||this.x<0||this.x>W||this.y<0||this.y>H)this.reset(); }
-    draw(){ const f=Math.min(this.life/25,1)*Math.min((this.ml-this.life)/25,1);
-      ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
-      if(this.t==='r'){ctx.fillStyle=`rgba(255,0,80,${this.a*f})`;ctx.shadowBlur=10;ctx.shadowColor='rgba(255,0,80,.7)';}
-      else{ctx.fillStyle=`rgba(180,180,220,${this.a*f*.4})`;ctx.shadowBlur=0;}
-      ctx.fill();ctx.shadowBlur=0; } }
-  for(let i=0;i<80;i++)pts.push(new P());
-  let fr=0;
+  const c=document.getElementById('bg'), ctx=c.getContext('2d');
+  let W, H;
+  function resize(){ W=c.width=window.innerWidth; H=c.height=window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+
+  // ── DÉCOR TOKYO NUIT (dessiné en canvas) ──
+  function drawTokyo(){
+    // Ciel dégradé nuit — violet profond vers bleu nuit
+    const sky=ctx.createLinearGradient(0,0,0,H*.75);
+    sky.addColorStop(0,'rgba(8,4,22,1)');
+    sky.addColorStop(0.3,'rgba(14,6,35,1)');
+    sky.addColorStop(0.6,'rgba(20,8,40,1)');
+    sky.addColorStop(1,'rgba(30,10,30,1)');
+    ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+
+    // Sol — reflet humide de rue
+    const ground=ctx.createLinearGradient(0,H*.72,0,H);
+    ground.addColorStop(0,'rgba(15,5,25,1)');
+    ground.addColorStop(.3,'rgba(20,8,30,1)');
+    ground.addColorStop(1,'rgba(8,3,15,1)');
+    ctx.fillStyle=ground; ctx.fillRect(0,H*.72,W,H*.28);
+
+    // ── LUNE ──
+    const moonX=W*.78, moonY=H*.12, moonR=H*.055;
+    const moonGlow=ctx.createRadialGradient(moonX,moonY,0,moonX,moonY,moonR*5);
+    moonGlow.addColorStop(0,'rgba(255,220,180,.18)');
+    moonGlow.addColorStop(.4,'rgba(255,200,150,.07)');
+    moonGlow.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=moonGlow; ctx.fillRect(0,0,W,H*.4);
+    ctx.beginPath(); ctx.arc(moonX,moonY,moonR,0,Math.PI*2);
+    const mGrad=ctx.createRadialGradient(moonX-moonR*.2,moonY-moonR*.2,0,moonX,moonY,moonR);
+    mGrad.addColorStop(0,'rgba(255,245,220,1)');
+    mGrad.addColorStop(.7,'rgba(255,225,180,1)');
+    mGrad.addColorStop(1,'rgba(240,200,140,.9)');
+    ctx.fillStyle=mGrad; ctx.shadowBlur=40; ctx.shadowColor='rgba(255,210,150,.5)';
+    ctx.fill(); ctx.shadowBlur=0;
+
+    // ── ÉTOILES ──
+    ctx.fillStyle='rgba(255,255,255,.0)';
+    const stars=[[.05,.04,.7],[.12,.08,.5],[.18,.03,.6],[.25,.06,.4],[.32,.02,.8],[.38,.09,.5],
+      [.44,.04,.6],[.52,.07,.4],[.58,.03,.7],[.65,.08,.5],[.70,.05,.6],[.85,.06,.4],
+      [.90,.10,.5],[.95,.03,.7],[.08,.15,.4],[.20,.12,.6],[.35,.14,.5],[.50,.11,.4],
+      [.62,.13,.6],[.75,.15,.5],[.88,.12,.4],[.15,.18,.3],[.42,.17,.5],[.68,.16,.4]];
+    stars.forEach(([sx,sy,sa])=>{
+      ctx.beginPath(); ctx.arc(sx*W,sy*H,1+sa*.8,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${sa*.7})`;
+      ctx.shadowBlur=4; ctx.shadowColor=`rgba(255,255,255,${sa})`;
+      ctx.fill(); ctx.shadowBlur=0;
+    });
+
+    // ── BÂTIMENTS / IMMEUBLES ──
+    const buildings=[
+      {x:.0,w:.08,h:.55,floors:8,lit:.7},
+      {x:.07,w:.05,h:.45,floors:6,lit:.5},
+      {x:.11,w:.07,h:.62,floors:9,lit:.6},
+      {x:.17,w:.04,h:.38,floors:5,lit:.4},
+      {x:.20,w:.09,h:.70,floors:11,lit:.65},
+      {x:.28,w:.06,h:.50,floors:7,lit:.5},
+      {x:.33,w:.04,h:.42,floors:6,lit:.3},
+      {x:.36,w:.08,h:.68,floors:10,lit:.6},
+      {x:.43,w:.05,h:.35,floors:5,lit:.4},
+      {x:.47,w:.10,h:.75,floors:12,lit:.7},
+      {x:.56,w:.06,h:.55,floors:8,lit:.5},
+      {x:.61,w:.04,h:.40,floors:6,lit:.3},
+      {x:.64,w:.09,h:.65,floors:10,lit:.6},
+      {x:.72,w:.05,h:.48,floors:7,lit:.4},
+      {x:.76,w:.07,h:.60,floors:9,lit:.5},
+      {x:.82,w:.04,h:.35,floors:5,lit:.3},
+      {x:.85,w:.08,h:.58,floors:8,lit:.6},
+      {x:.92,w:.05,h:.45,floors:6,lit:.4},
+      {x:.96,w:.06,h:.52,floors:7,lit:.5},
+    ];
+
+    buildings.forEach(b=>{
+      const bx=b.x*W, bw=b.w*W;
+      const bh=b.h*H*.72, by=H*.72-bh;
+      // Corps immeuble
+      const bGrad=ctx.createLinearGradient(bx,by,bx+bw,by);
+      bGrad.addColorStop(0,'rgba(15,8,28,1)');
+      bGrad.addColorStop(.5,'rgba(20,10,35,1)');
+      bGrad.addColorStop(1,'rgba(12,6,22,1)');
+      ctx.fillStyle=bGrad; ctx.fillRect(bx,by,bw,bh);
+      // Bord lumineux
+      ctx.strokeStyle='rgba(80,40,120,.3)'; ctx.lineWidth=.5;
+      ctx.strokeRect(bx,by,bw,bh);
+
+      // Fenêtres allumées
+      const floors=b.floors;
+      const fh=bh/floors;
+      const fcols=Math.max(2,Math.floor(bw/14));
+      const fw=bw/fcols*.55;
+      for(let row=0;row<floors-1;row++){
+        for(let col=0;col<fcols;col++){
+          if(Math.random()<b.lit){
+            const wx=bx+(col/fcols)*bw+(bw/fcols*.2);
+            const wy=by+row*fh+fh*.2;
+            const wh=fh*.5;
+            // Couleur fenêtre : chaud ou froid
+            const warm=Math.random()<.6;
+            const wc=warm?`rgba(255,${180+Math.floor(Math.random()*60)},${80+Math.floor(Math.random()*60)}`
+                        :`rgba(${150+Math.floor(Math.random()*60)},${180+Math.floor(Math.random()*60)},255`;
+            ctx.fillStyle=`${wc},.85)`;
+            ctx.shadowBlur=6; ctx.shadowColor=`${wc},.6)`;
+            ctx.fillRect(wx,wy,fw,wh);
+            // Reflet au sol
+            ctx.fillStyle=`${wc},.04)`;
+            ctx.fillRect(wx,H*.72,fw,H*.06);
+            ctx.shadowBlur=0;
+          }
+        }
+      }
+      // Antenne / toit
+      if(Math.random()<.4){
+        ctx.strokeStyle='rgba(60,30,80,.6)'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.moveTo(bx+bw/2,by); ctx.lineTo(bx+bw/2,by-H*.04); ctx.stroke();
+        // Lumière clignotante
+        ctx.beginPath(); ctx.arc(bx+bw/2,by-H*.04,2,0,Math.PI*2);
+        ctx.fillStyle=`rgba(255,50,50,${.4+.4*Math.sin(Date.now()*.003+bx)})`;
+        ctx.fill();
+      }
+    });
+
+    // ── ARBRES CERISIERS (silhouettes) ──
+    function drawTree(tx,ty,size,side){
+      // Tronc
+      ctx.strokeStyle='rgba(30,15,40,.9)'; ctx.lineWidth=size*.04;
+      ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(tx,ty-size*.35); ctx.stroke();
+      // Branches principales
+      const branches=[
+        [tx,ty-size*.35, tx-size*(side?-.3:.3),ty-size*.6, size*.025],
+        [tx,ty-size*.35, tx+size*(side?-.25:.25),ty-size*.55, size*.02],
+        [tx,ty-size*.45, tx-size*(side?-.2:.2),ty-size*.75, size*.015],
+        [tx,ty-size*.45, tx+size*(side?-.15:.15),ty-size*.7, size*.012],
+      ];
+      branches.forEach(([x1,y1,x2,y2,lw])=>{
+        ctx.strokeStyle='rgba(25,12,35,.8)'; ctx.lineWidth=lw*W;
+        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+      });
+      // Masse de fleurs
+      const blossoms=[
+        [tx-size*.28,ty-size*.68,size*.22],
+        [tx+size*.22,ty-size*.62,size*.2],
+        [tx,ty-size*.82,size*.25],
+        [tx-size*.12,ty-size*.55,size*.18],
+        [tx+size*.08,ty-size*.75,size*.2],
+        [tx-size*.35,ty-size*.5,size*.16],
+        [tx+size*.3,ty-size*.55,size*.17],
+      ];
+      blossoms.forEach(([bx,by,br])=>{
+        const bg=ctx.createRadialGradient(bx,by,0,bx,by,br*W);
+        bg.addColorStop(0,'rgba(255,160,185,.55)');
+        bg.addColorStop(.5,'rgba(255,120,160,.3)');
+        bg.addColorStop(1,'rgba(255,100,140,.0)');
+        ctx.beginPath(); ctx.arc(bx,by,br*W,0,Math.PI*2);
+        ctx.fillStyle=bg;
+        ctx.shadowBlur=15; ctx.shadowColor='rgba(255,140,170,.4)';
+        ctx.fill(); ctx.shadowBlur=0;
+      });
+    }
+
+    // Arbres gauche
+    drawTree(W*.04,H*.72,H*.0045*18,false);
+    drawTree(W*.10,H*.72,H*.0045*15,false);
+    drawTree(W*.16,H*.72,H*.0045*20,false);
+    // Arbres droite
+    drawTree(W*.82,H*.72,H*.0045*17,true);
+    drawTree(W*.88,H*.72,H*.0045*19,true);
+    drawTree(W*.94,H*.72,H*.0045*16,true);
+    // Arbres centre-gauche
+    drawTree(W*.26,H*.72,H*.0045*13,false);
+    // Arbres centre-droite
+    drawTree(W*.72,H*.72,H*.0045*14,true);
+
+    // ── SOL — reflets néons ──
+    // Ligne de route
+    ctx.fillStyle='rgba(25,12,40,.8)';
+    ctx.fillRect(0,H*.72,W,H*.28);
+    // Reflet lune sur sol mouillé
+    const refMoon=ctx.createRadialGradient(moonX,H*.76,0,moonX,H*.82,W*.3);
+    refMoon.addColorStop(0,'rgba(255,220,150,.06)');
+    refMoon.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=refMoon; ctx.fillRect(0,H*.72,W,H*.28);
+    // Reflets néons colorés sur sol
+    const neons=[
+      {x:.15,col:'rgba(255,80,120',a:.08},
+      {x:.35,col:'rgba(80,160,255',a:.06},
+      {x:.55,col:'rgba(255,200,50',a:.07},
+      {x:.75,col:'rgba(120,80,255',a:.05},
+      {x:.90,col:'rgba(255,100,80',a:.06},
+    ];
+    neons.forEach(n=>{
+      const ng=ctx.createRadialGradient(n.x*W,H*.72,0,n.x*W,H*.85,W*.12);
+      ng.addColorStop(0,`${n.col},${n.a})`);
+      ng.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=ng; ctx.fillRect(0,H*.72,W,H*.28);
+    });
+
+    // Lignes de route
+    ctx.strokeStyle='rgba(255,255,255,.04)'; ctx.lineWidth=1;
+    ctx.setLineDash([W*.04, W*.03]);
+    ctx.beginPath(); ctx.moveTo(0,H*.82); ctx.lineTo(W,H*.82); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // ── BRUME / FOG BAS ──
+    const fog=ctx.createLinearGradient(0,H*.68,0,H*.78);
+    fog.addColorStop(0,'rgba(40,15,55,.0)');
+    fog.addColorStop(.5,'rgba(40,15,55,.12)');
+    fog.addColorStop(1,'rgba(20,8,35,.0)');
+    ctx.fillStyle=fog; ctx.fillRect(0,H*.68,W,H*.1);
+  }
+
+  // ── PÉTALES DE SAKURA ──
+  function drawPetal(x,y,size,angle,alpha,color){
+    ctx.save(); ctx.translate(x,y); ctx.rotate(angle); ctx.globalAlpha=alpha;
+    ctx.beginPath();
+    ctx.moveTo(0,-size);
+    ctx.bezierCurveTo(size*.9,-size*.5,size*.9,size*.5,0,size);
+    ctx.bezierCurveTo(-size*.9,size*.5,-size*.9,-size*.5,0,-size);
+    ctx.fillStyle=color;
+    ctx.shadowBlur=10; ctx.shadowColor=color;
+    ctx.fill(); ctx.restore(); ctx.globalAlpha=1; ctx.shadowBlur=0;
+  }
+
+  const SAKURA_COLS=['rgba(255,170,190,1)','rgba(255,110,150,1)','rgba(255,210,220,1)',
+                     'rgba(230,80,120,1)','rgba(255,190,205,1)','rgba(255,140,165,1)'];
+
+  class Petal {
+    constructor(init=false){this.reset(init);}
+    reset(init=false){
+      this.x=Math.random()*W;
+      this.y=init?Math.random()*H:-15;
+      this.size=Math.random()*7+3;
+      this.vy=Math.random()*1.1+0.35;
+      this.vx=(Math.random()-.5)*.5;
+      this.angle=Math.random()*Math.PI*2;
+      this.spin=(Math.random()-.5)*.045;
+      this.alpha=Math.random()*.55+0.25;
+      this.wobble=Math.random()*Math.PI*2;
+      this.wSpeed=Math.random()*.025+.008;
+      this.color=SAKURA_COLS[Math.floor(Math.random()*SAKURA_COLS.length)];
+    }
+    update(){
+      this.wobble+=this.wSpeed;
+      this.x+=this.vx+Math.sin(this.wobble)*.7;
+      this.y+=this.vy;
+      this.angle+=this.spin;
+      if(this.y>H+15)this.reset();
+    }
+    draw(){ drawPetal(this.x,this.y,this.size,this.angle,this.alpha,this.color); }
+  }
+
+  const petals=Array.from({length:70},(_,i)=>new Petal(true));
+
+  // ── REFLETS PÉTALES AU SOL ──
+  function drawGroundReflection(p){
+    if(p.y<H*.7)return;
+    const reflY=H*.72+(H*.72-p.y)*.2+H*.06;
+    if(reflY>H)return;
+    drawPetal(p.x,reflY,p.size*.6,p.angle,p.alpha*.2,p.color);
+  }
+
+  // ── LOOP ──
   (function loop(){
     ctx.clearRect(0,0,W,H);
-    const bg=ctx.createRadialGradient(W/2,H*.4,0,W/2,H*.4,Math.max(W,H));
-    bg.addColorStop(0,'rgba(12,5,22,1)'); bg.addColorStop(1,'rgba(4,4,10,1)');
-    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
-    // grid
-    ctx.strokeStyle='rgba(255,255,255,.018)'; ctx.lineWidth=1;
-    for(let x=0;x<W;x+=90){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-    for(let y=0;y<H;y+=90){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-    // beams
-    [[W*.1,25,.04,200],[W*.8,-20,.03,160]].forEach(([x,ang,a,w])=>{
-      ctx.save();ctx.translate(x,0);ctx.rotate(ang*Math.PI/180);
-      const g=ctx.createLinearGradient(0,0,0,H*1.4);
-      g.addColorStop(0,`rgba(232,0,61,${a})`);g.addColorStop(1,'rgba(232,0,61,0)');
-      ctx.fillStyle=g;ctx.fillRect(-w/2,0,w,H*1.4);ctx.restore();});
-    pts.forEach(p=>{p.update();p.draw();});
-    if(fr%200===0&&Math.random()<.35){
-      const fy=Math.random()*H;ctx.beginPath();ctx.moveTo(0,fy);ctx.lineTo(W,fy);
-      ctx.strokeStyle='rgba(255,0,80,.1)';ctx.lineWidth=1;ctx.stroke();}
-    fr++;requestAnimationFrame(loop);
+    drawTokyo();
+    // Overlay sombre pour que le dashboard reste lisible
+    ctx.fillStyle='rgba(4,2,12,.52)';
+    ctx.fillRect(0,0,W,H);
+    // Pétales
+    petals.forEach(p=>{ p.update(); p.draw(); drawGroundReflection(p); });
+    requestAnimationFrame(loop);
   })();
 })();
 
