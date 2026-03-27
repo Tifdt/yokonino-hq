@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>YokoNino</title>
+<title>YokoNino — HQ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
@@ -1228,7 +1228,7 @@ body {
     <!-- TOPBAR -->
     <div class="topbar">
       <div>
-        <div class="topbar-title">YOKONINO HQ</div>
+        <div class="topbar-title">YOKONINO</div>
       </div>
       <div class="topbar-breadcrumb" id="breadcrumb">HOME / DASHBOARD</div>
       <div class="topbar-right">
@@ -1304,7 +1304,7 @@ body {
             <div class="activity-item">
               <span class="activity-time">Maintenant</span>
               <span class="activity-dot" style="background:var(--green);box-shadow:0 0 6px var(--green)"></span>
-              <span>YokoNino HQ est en ligne 🚀</span>
+              <span>YokoNino est en ligne 🚀</span>
             </div>
           </div>
         </div>
@@ -1693,8 +1693,6 @@ function deleteEvent(id){
   save(STORAGE_KEYS.EVENTS, events);
   addActivity('Un event a été supprimé','rgba(255,80,80,.8)');
   toast('Event supprimé 🗑');
-  // Révoquer le mode suppression après chaque delete
-  revokeDeleteMode();
   renderAll();
   if(document.getElementById('sec-streams').classList.contains('active')) renderCalendar();
 }
@@ -1890,6 +1888,16 @@ function renderRdvList(){
 // COMMUNITY
 // ═══════════════════════════════════════════════
 const EMOJIS=['🐺','🦊','🐉','⚔️','🎮','👾','🔥','💀','🌙','⚡'];
+function deleteRegistration(name){
+  if(!isDeleteMode){ toast('Accès refusé !','error'); return; }
+  registrations = registrations.filter(r=>r.name!==name);
+  save(STORAGE_KEYS.REGISTRATIONS, registrations);
+  addActivity(`Membre <strong>${name}</strong> supprimé de la communauté`,'rgba(255,80,80,.8)');
+  toast(`${name} supprimé 🗑`);
+  updateStats();
+  renderCommunity();
+}
+
 function renderCommunity(){
   // Leaderboard from registrations
   const counts={};
@@ -1908,6 +1916,7 @@ function renderCommunity(){
           <div class="lb-badge">${pts} event${pts>1?'s':''} inscrit${pts>1?'s':''}</div>
         </div>
         <div class="lb-pts">${pts * 100}pts</div>
+        ${isDeleteMode ? `<button style="font-family:var(--font-mono);font-size:9px;padding:4px 10px;border:1px solid rgba(255,80,80,.3);background:transparent;color:rgba(255,80,80,.6);cursor:none;letter-spacing:1px;margin-left:8px;transition:all .2s" onmouseenter="this.style.color='#ff5050';this.style.borderColor='#ff5050'" onmouseleave="this.style.color='rgba(255,80,80,.6)';this.style.borderColor='rgba(255,80,80,.3)'" onclick="deleteRegistration('${name}')">✕</button>` : ''}
       </div>`;}).join('');
   }
   // Goals
