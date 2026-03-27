@@ -1025,8 +1025,32 @@ body {
 </div>
 
 <!-- ══════════════════════════════
-     ADD EVENT MODAL
+     ADMIN DELETE MODE MODAL
 ══════════════════════════════ -->
+<div class="modal-overlay" id="adminDeleteModal">
+  <div class="modal" style="max-width:380px">
+    <button class="modal-close" onclick="closeModal('adminDeleteModal')">✕</button>
+    <div class="modal-title">MODE <span style="color:#ff5050">SUPPRESSION</span></div>
+    <div class="modal-sub">Authentifie-toi pour supprimer des events 🗑</div>
+    <div class="modal-form">
+      <div class="form-group" style="position:relative">
+        <label class="form-label">Mot de passe</label>
+        <input class="form-input" id="admin-del-pwd" type="password" placeholder="••••••••"
+          onkeydown="if(event.key==='Enter')checkDeletePwd()"
+          style="padding-right:48px;letter-spacing:4px">
+      </div>
+      <div id="admin-del-error" style="display:none;font-family:var(--font-mono);font-size:10px;color:#ff5050;letter-spacing:2px;text-align:center;padding:8px;border:1px solid rgba(255,50,50,.3);background:rgba(255,50,50,.08)">
+        ✕ MOT DE PASSE INCORRECT
+      </div>
+      <button class="btn" style="margin-top:4px;border-color:rgba(255,50,50,.4);color:#ff5050" onclick="checkDeletePwd()">ACTIVER LA SUPPRESSION →</button>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text);letter-spacing:2px;text-align:center;margin-top:8px">
+        Raccourci : <span style="color:#ff5050">Ctrl + Shift + D</span> · Échap pour quitter
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <div class="modal-overlay" id="addEventModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('addEventModal');revokeAdmin()">✕</button>
@@ -1215,6 +1239,9 @@ body {
         <div class="topbar-time" id="clock">--:--:--</div>
         <div id="admin-badge" style="display:none;align-items:center;gap:8px;background:rgba(255,201,51,.08);border:1px solid rgba(255,201,51,.3);padding:5px 14px;font-family:var(--font-mono);font-size:10px;letter-spacing:3px;color:var(--gold);">
           ⚡ ADMIN
+        </div>
+        <div id="admin-delete-badge" style="display:none;align-items:center;gap:8px;background:rgba(255,50,50,.08);border:1px solid rgba(255,50,50,.3);padding:5px 14px;font-family:var(--font-mono);font-size:10px;letter-spacing:3px;color:#ff5050;">
+          🗑 MODE SUPPRESSION
         </div>
       </div>
     </div>
@@ -1661,11 +1688,13 @@ function isRegistered(eventId){
 }
 
 function deleteEvent(id){
-  if(!isAdmin){ toast('Accès refusé !','error'); return; }
+  if(!isDeleteMode){ toast('Accès refusé !','error'); return; }
   events = events.filter(e=>e.id!==id);
   save(STORAGE_KEYS.EVENTS, events);
   addActivity('Un event a été supprimé','rgba(255,80,80,.8)');
-  toast('Event supprimé');
+  toast('Event supprimé 🗑');
+  // Révoquer le mode suppression après chaque delete
+  revokeDeleteMode();
   renderAll();
   if(document.getElementById('sec-streams').classList.contains('active')) renderCalendar();
 }
@@ -1726,7 +1755,7 @@ function renderEvents(){
         ${ev.desc?`<div class="event-desc">${ev.desc}</div>`:''}
         <div class="event-footer">
           <span class="registrants-count"><strong>${count}</strong> inscrit${count>1?'s':''}</span>
-          ${isAdmin ? `<button style="font-family:var(--font-mono);font-size:9px;padding:4px 10px;border:1px solid rgba(255,80,80,.3);background:transparent;color:rgba(255,80,80,.6);cursor:none;letter-spacing:1px;transition:all .2s" onmouseenter="this.style.color='#ff5050';this.style.borderColor='#ff5050'" onmouseleave="this.style.color='rgba(255,80,80,.6)';this.style.borderColor='rgba(255,80,80,.3)'" onclick="deleteEvent(${ev.id})">✕ SUPPR</button>` : ''}
+          ${isDeleteMode ? `<button style="font-family:var(--font-mono);font-size:9px;padding:4px 10px;border:1px solid rgba(255,80,80,.3);background:transparent;color:rgba(255,80,80,.6);cursor:none;letter-spacing:1px;transition:all .2s" onmouseenter="this.style.color='#ff5050';this.style.borderColor='#ff5050'" onmouseleave="this.style.color='rgba(255,80,80,.6)';this.style.borderColor='rgba(255,80,80,.3)'" onclick="deleteEvent(${ev.id})">✕ SUPPR</button>` : ''}
           <button class="register-btn ${reg?'registered':''}" onclick="openRegister(${ev.id},'${ev.title.replace(/'/g,"\\'")}')">
             ${reg?'✓ INSCRIT':'S\'INSCRIRE'}
           </button>
@@ -1939,18 +1968,19 @@ function renderAll(){
 }
 
 // ═══════════════════════════════════════════════
-// ADMIN AUTH — mode éphémère, actif uniquement pendant l'ajout
+// ADMIN AUTH — mode éphémère, actif uniquement pendant l'action
 // ═══════════════════════════════════════════════
 const ADMIN_HASH = '7b81abf341cea779264e7b4c39cf9229456daf8f889842b225b25036a7771a66';
 
-// isAdmin est toujours false au chargement, jamais persisté
 let isAdmin = false;
+let isDeleteMode = false;
 
 async function sha256(str){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
+// ── LOGIN AJOUT ──
 async function checkAdminPwd(){
   const pwd = document.getElementById('admin-pwd').value;
   const hash = await sha256(pwd);
@@ -1959,7 +1989,6 @@ async function checkAdminPwd(){
     closeModal('adminLoginModal');
     document.getElementById('admin-pwd').value='';
     document.getElementById('admin-error').style.display='none';
-    // Affiche le badge uniquement pendant que le modal d'ajout est ouvert
     document.getElementById('admin-badge').style.display='flex';
     toast('Accès accordé 🔥 Publie ton event !');
     openModal('addEventModal');
@@ -1973,10 +2002,39 @@ async function checkAdminPwd(){
   }
 }
 
-// Appelée dès que le modal addEvent se ferme (✕ ou après publication)
+// ── LOGIN SUPPRESSION ──
+async function checkDeletePwd(){
+  const pwd = document.getElementById('admin-del-pwd').value;
+  const hash = await sha256(pwd);
+  if(hash === ADMIN_HASH){
+    isDeleteMode = true;
+    closeModal('adminDeleteModal');
+    document.getElementById('admin-del-pwd').value='';
+    document.getElementById('admin-del-error').style.display='none';
+    document.getElementById('admin-delete-badge').style.display='flex';
+    toast('Mode suppression activé 🗑 Clique sur ✕ SUPPR pour effacer un event.','error');
+    // Naviguer vers events pour voir les boutons
+    nav('events');
+    renderEvents();
+  } else {
+    document.getElementById('admin-del-error').style.display='block';
+    document.getElementById('admin-del-pwd').value='';
+    document.getElementById('admin-del-pwd').focus();
+    const input = document.getElementById('admin-del-pwd');
+    input.style.borderColor='rgba(255,50,50,.8)';
+    setTimeout(()=>input.style.borderColor='',1500);
+  }
+}
+
 function revokeAdmin(){
   isAdmin = false;
   document.getElementById('admin-badge').style.display='none';
+}
+
+function revokeDeleteMode(){
+  isDeleteMode = false;
+  document.getElementById('admin-delete-badge').style.display='none';
+  renderEvents();
 }
 
 function togglePwdVisibility(){
@@ -1984,16 +2042,26 @@ function togglePwdVisibility(){
   inp.type = inp.type === 'password' ? 'text' : 'password';
 }
 
-// Raccourci clavier Ctrl+Shift+A → ouvre toujours le login (jamais de shortcut direct vers addEvent)
+// Ctrl+Shift+A → ajout | Ctrl+Shift+D → suppression | Échap → quitter delete mode
 document.addEventListener('keydown', e => {
   if(e.ctrlKey && e.shiftKey && e.key === 'A'){
     e.preventDefault();
     openModal('adminLoginModal');
     setTimeout(()=>document.getElementById('admin-pwd').focus(), 200);
   }
+  if(e.ctrlKey && e.shiftKey && e.key === 'D'){
+    e.preventDefault();
+    if(isDeleteMode){ revokeDeleteMode(); toast('Mode suppression désactivé'); return; }
+    openModal('adminDeleteModal');
+    setTimeout(()=>document.getElementById('admin-del-pwd').focus(), 200);
+  }
+  if(e.key === 'Escape' && isDeleteMode){
+    revokeDeleteMode();
+    toast('Mode suppression désactivé');
+  }
 });
 
-// Révoquer admin si on clique en dehors du modal addEvent (overlay click)
+// Révoquer admin si on clique en dehors du modal addEvent
 document.getElementById('addEventModal').addEventListener('click', e => {
   if(e.target === document.getElementById('addEventModal')) revokeAdmin();
 });
